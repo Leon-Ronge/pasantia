@@ -395,6 +395,44 @@ contiene credenciales reales.
 
 ## Instrucciones de despliegue
 
+### Opción gratis: Render + Neon (recomendada para uso personal)
+
+Un solo servicio Docker en Render (plan Free) con Postgres gratis en Neon y
+Basic Auth con usuario/contraseña (la app no tiene login propio).
+
+1. **Base de datos (Neon)**: crear cuenta en <https://neon.tech> → nuevo
+   proyecto → copiar el **pooled connection string**
+   (`postgresql://usuario:clave@ep-….neon.tech/neondb?sslmode=require`).
+2. **Código (GitHub)**: crear un repositorio vacío en GitHub y subir el
+   proyecto (ya viene con `.gitignore` y `render.yaml`):
+
+   ```powershell
+   git remote add origin https://github.com/TU-USUARIO/pasantia.git
+   git push -u origin main
+   ```
+3. **Servicio (Render)**: <https://dashboard.render.com> → **New → Blueprint**
+   → elegir ese repositorio. Render detecta `render.yaml`; al aprobar el
+   plan se cargan3 valores secretos:
+   - `DATABASE_URL` → la URL de Neon,
+   - `BASIC_AUTH_USER` y `BASIC_AUTH_PASS` → la contraseña de acceso
+     (elegirl fuerte: protege **toda** la app).
+4. Esperar el primer build (compila frontend + backend en la imagen única).
+   La URL queda `https://pasantia-xxxx.onrender.com`.
+5. **Migraciones y datos**: corren solas en el arranque
+   (`entrypoint.sh`: migrate + bootstrap + collectstatic).
+
+Notas del plan Free:
+
+- La instancia se **duerme tras ~15 min sin uso**; el primer request tarda
+  ~30–60 s. Después responde normal.
+- Los datos viven en Neon (persistencia real); el disco del contenedor es
+  efímero y no importa.
+- `/health/` queda sin contraseña (sonda de Render); todo lo demás pide
+  Basic Auth.
+- Actualizaciones: `git push` en `main` → Render redeploya solo.
+
+### Servidor propio con Docker Compose
+
 1. Servidor con Docker y Compose v2; abrir solo el puerto de la app (8080)
    y, opcionalmente, el de PostgreSQL (5433) en firewall/seguridad del
    proveedor.
