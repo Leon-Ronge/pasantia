@@ -1,0 +1,14 @@
+# Dependencias y artefactos (nunca se commitean)
+node_modules/
+dist/
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.sqlite3
+backend/db.sqlite3
+backend/staticfiles/
+.env
+.env.*
+backend/.env
+.DS_Store

@@ -1,0 +1,500 @@
+# Proyecto: Aplicación web de control de pasantía y gastos de transporte
+
+Actuá como un desarrollador full-stack senior especializado en React, TypeScript, Django, Django REST Framework y PostgreSQL. Necesito que desarrolles una aplicación web personal, funcional, responsive y lista para desplegar, destinada a controlar mis gastos en colectivo y las horas de mi pasantía.
+
+No quiero solamente una propuesta, un tutorial o una maqueta estática. Quiero que implementes el proyecto completo, con frontend, backend, base de datos, validaciones, cálculos, persistencia y documentación.
+
+## 1. Objetivo general
+
+La aplicación debe resolver tres necesidades:
+
+1. Registrar mis gastos mensuales en colectivo y controlar los 20 viajes mensuales que me proporciona la empresa.
+2. Registrar mis horarios reales de entrada y salida de la pasantía, calculando automáticamente las horas trabajadas y la hora prevista de salida.
+3. Planificar automáticamente mi semana laboral para completar 20 horas semanales, permitiendo modificar manualmente la planificación y mantener un seguimiento del déficit acumulado de horas.
+
+La aplicación es de uso personal y no distingue entre usuarios. No debe implementarse login, registro, sesiones, tokens ni autenticación de ningún tipo: al abrirla se debe acceder directamente al Dashboard, sin pantallas intermedias.
+
+Debe funcionar desde mi PC y mi celular, con los datos sincronizados mediante una base de datos centralizada.
+
+## 2. Stack tecnológico
+
+Utilizá las siguientes tecnologías:
+
+- Frontend: React + TypeScript + Vite.
+- Estilos: Tailwind CSS.
+- Backend: Python + Django + Django REST Framework.
+- Base de datos: PostgreSQL.
+- Autenticación: no aplica. La aplicación no tiene login, registro de usuarios, sesiones, tokens ni autenticación de ningún tipo. Es una herramienta personal de uso individual y se abre directamente en el Dashboard.
+- API REST para la comunicación entre frontend y backend.
+- Docker Compose para facilitar el desarrollo y el despliegue local.
+- Variables de entorno para credenciales y configuración.
+
+Utilizá versiones estables y compatibles de las dependencias. Evitá tecnologías innecesarias y mantené una arquitectura clara, modular y fácil de mantener.
+
+No utilices datos simulados como sustituto de la persistencia real. Los datos de ejemplo, si existen, deben ser opcionales y estar claramente identificados.
+
+## 3. Diseño y experiencia de usuario
+
+Quiero una interfaz moderna, minimalista, profesional y fácil de usar.
+
+Características visuales:
+- Diseño limpio, con buena jerarquía visual.
+- Interfaz responsive, optimizada tanto para escritorio como para celulares.
+- Navegación lateral en escritorio y navegación compacta en dispositivos móviles.
+- Tarjetas de resumen, tablas claras, indicadores de progreso y calendarios semanales.
+- Formularios sencillos y acciones rápidas.
+- Modo claro y oscuro, si resulta viable sin complicar excesivamente el desarrollo.
+- Formato de fecha y hora argentino: DD/MM/AAAA y formato de 24 horas.
+- Moneda en pesos argentinos (ARS), con formato local.
+- Zona horaria: America/Argentina/Cordoba.
+
+Evitá una interfaz recargada, gradientes excesivos, animaciones innecesarias y elementos decorativos que dificulten la lectura.
+
+La aplicación debe priorizar la velocidad para registrar datos cotidianos.
+
+## 4. Estructura de navegación
+
+Implementá estas cuatro secciones principales:
+
+### A. Dashboard
+
+Es la pantalla inicial de la aplicación: al abrir la URL se debe mostrar directamente este Dashboard, sin pantallas intermedias ni redirecciones de autenticación.
+
+Debe mostrar un resumen actualizado de:
+
+- Horas trabajadas durante la semana actual.
+- Objetivo semanal de 20 horas.
+- Horas que faltan para alcanzar el objetivo.
+- Déficit acumulado de semanas anteriores.
+- Progreso semanal mediante una barra visual.
+- Próxima jornada planificada y horario recomendado.
+- Gasto personal en colectivo durante el mes actual.
+- Cantidad de viajes cubiertos por la empresa.
+- Cantidad de viajes personales.
+- Saldo de viajes incluidos que todavía tengo disponibles.
+- Accesos rápidos para registrar un viaje, marcar entrada y marcar salida.
+
+Todos los indicadores deben derivarse de datos reales almacenados en la base de datos.
+
+### B. Transporte
+
+El módulo de transporte debe registrar exclusivamente gastos y cantidad de viajes. No necesito registrar horarios, recorridos, líneas de colectivo ni ubicaciones.
+
+Cada registro de viaje debe contener:
+
+- Identificador.
+- Fecha del viaje.
+- Importe en pesos argentinos.
+- Tipo de pago: `COMPANY` (cubierto por la empresa) o `PERSONAL` (pagado por mí).
+- Estado del registro, para poder anularlo sin perder el historial.
+- Fecha de creación.
+
+Funcionalidades:
+
+1. Botón para registrar un viaje rápidamente.
+2. Fecha predeterminada: fecha actual.
+3. Importe predeterminado: tarifa actual configurable.
+4. Selección rápida entre viaje cubierto y viaje personal.
+5. Posibilidad de modificar el importe, la fecha y el tipo de pago.
+6. Historial de viajes con filtros por mes y tipo de pago.
+7. Edición y anulación de registros.
+8. Resumen mensual.
+9. Comparación de gastos entre meses.
+10. Configuración de la tarifa vigente del colectivo.
+
+Reglas de negocio:
+
+- La empresa me proporciona 20 viajes por mes calendario.
+- El beneficio se renueva el primer día de cada mes.
+- Los viajes no utilizados no se acumulan.
+- Un viaje `COMPANY` consume un viaje del beneficio mensual.
+- Un viaje `PERSONAL` no consume el beneficio.
+- Los viajes anulados no deben computarse.
+- El saldo disponible nunca puede ser negativo.
+- El gasto personal es la suma de los importes de los viajes `PERSONAL` válidos.
+- El gasto cubierto es la suma de los importes de los viajes `COMPANY` válidos.
+- El ahorro estimado debe poder calcularse a partir de los importes históricos de los viajes cubiertos.
+- Si cambia la tarifa, los registros históricos deben conservar sus importes originales.
+
+No es necesario ejecutar una tarea programada para reiniciar el beneficio. El saldo debe calcularse a partir de los viajes válidos del mes consultado y el límite mensual configurado.
+
+### C. Control de horas
+
+Este módulo debe registrar mis jornadas reales de pasantía.
+
+Configuración inicial:
+
+- Objetivo semanal: 20 horas.
+- Jornada diaria estándar: 5 horas.
+- Días de referencia: lunes, martes, miércoles y jueves.
+- Semana laboral: lunes a domingo.
+- Zona horaria: America/Argentina/Cordoba.
+
+Los días de referencia deben ser editables.
+
+Cada jornada debe contener:
+
+- Identificador.
+- Fecha.
+- Hora real de entrada.
+- Hora real de salida, inicialmente vacía si la jornada está en curso.
+- Duración efectiva en minutos.
+- Observaciones opcionales.
+- Estado: pendiente, en curso o completada.
+- Fecha de creación y última modificación.
+
+Funcionalidades:
+
+1. Botón «Marcar entrada».
+2. Botón «Marcar salida».
+3. Mostrar la hora de entrada registrada.
+4. Calcular automáticamente la hora objetivo de salida.
+5. Mostrar cuánto tiempo llevo trabajando.
+6. Mostrar cuánto falta para alcanzar las 5 horas.
+7. Mostrar las horas realmente trabajadas al registrar la salida.
+8. Permitir corregir manualmente una entrada o salida.
+9. Consultar jornadas anteriores.
+10. Mostrar el acumulado semanal y mensual.
+
+Ejemplo de funcionamiento:
+
+Si marco la entrada a las 09:15, la aplicación debe mostrar:
+
+- Entrada real: 09:15.
+- Objetivo diario: 5 horas.
+- Salida prevista: 14:15.
+- Tiempo trabajado: calculado dinámicamente.
+- Tiempo restante: actualizado mientras la jornada está en curso.
+
+Cuando marco la salida, la duración real debe calcularse utilizando las marcas registradas.
+
+Para el MVP, asumí que no hay pausas descontables. No descuentes pausas automáticamente.
+
+Utilizá minutos enteros como unidad de cálculo para evitar errores de redondeo.
+
+Validaciones:
+- No permitir una salida anterior a la entrada.
+- Evitar registrar accidentalmente dos jornadas abiertas simultáneamente.
+- Advertir si intento marcar una salida sin una jornada abierta.
+- Permitir corregir errores sin duplicar horas.
+- Si modifico una jornada histórica, recalcular los balances afectados.
+
+Si la aplicación permanece abierta durante una jornada, la duración debe actualizarse en pantalla sin necesidad de recargar la página.
+
+### D. Planificador semanal
+
+Este es uno de los componentes más importantes.
+
+Debe existir un calendario semanal de lunes a domingo que muestre:
+
+- Jornadas planificadas.
+- Jornadas efectivamente realizadas.
+- Hora prevista de entrada.
+- Hora prevista de salida.
+- Duración prevista.
+- Duración real, cuando esté disponible.
+- Diferencia entre horas previstas y reales.
+- Días libres.
+- Horas pendientes de completar.
+
+Debe tener dos modos:
+
+**Modo automático**
+
+El sistema debe generar una propuesta para completar las 20 horas semanales.
+
+Reglas:
+
+1. Calcular las horas trabajadas en la semana actual.
+2. Calcular las horas que faltan para llegar a 20.
+3. Consultar los días habilitados y las restricciones configuradas.
+4. Proponer jornadas de 5 horas como primera opción.
+5. Permitir jornadas de duración diferente cuando sea necesario.
+6. Priorizar los días preferidos configurados.
+7. No planificar horas en días marcados como no disponibles.
+8. No duplicar jornadas existentes.
+9. Respetar las jornadas bloqueadas manualmente.
+10. Recalcular las propuestas cuando se registre o corrija una jornada real.
+11. Si no existe una distribución posible, explicar el motivo y mostrar las horas que todavía no se pueden programar.
+
+**Modo manual**
+
+Debe permitir:
+
+- Elegir los días de trabajo.
+- Establecer una hora de entrada prevista.
+- Modificar la duración de cada jornada.
+- Bloquear una jornada para que el planificador no la modifique.
+- Marcar días como no disponibles.
+- Regenerar la planificación respetando las restricciones.
+- Comparar el plan previsto con el trabajo realizado.
+
+El planificador debe ser determinista y estar implementado mediante reglas explícitas. No utilices inteligencia artificial para realizar cálculos aritméticos ni para decidir si las horas están correctamente contabilizadas.
+
+Si la aplicación no conoce la disponibilidad real de un día, no debe inventarla: debe utilizar las preferencias y restricciones configuradas en la aplicación.
+
+## 5. Reglas de cálculo de horas y déficit acumulado
+
+La semana laboral comienza el lunes a las 00:00 y termina el domingo a las 23:59, en la zona horaria configurada.
+
+El objetivo semanal es de 1.200 minutos.
+
+Definiciones:
+
+- `worked_minutes`: minutos efectivamente trabajados en una semana.
+- `weekly_target_minutes`: 1.200 minutos.
+- `weekly_delta`: diferencia entre lo trabajado y el objetivo semanal.
+- `opening_deficit_minutes`: déficit acumulado al comenzar la semana.
+- `closing_deficit_minutes`: déficit acumulado al cerrar la semana.
+
+Fórmula:
+
+`weekly_delta = worked_minutes - weekly_target_minutes`
+
+`closing_deficit_minutes = max(0, opening_deficit_minutes - weekly_delta)`
+
+Ejemplos:
+
+- Semana 1: 17 horas trabajadas → déficit de 3 horas.
+- Semana 2: 18 horas trabajadas → déficit acumulado de 5 horas.
+- Semana 3: 22 horas trabajadas → déficit acumulado de 3 horas.
+- Semana 4: 20 horas trabajadas → déficit acumulado de 3 horas.
+
+La aplicación debe distinguir entre:
+
+1. Déficit semanal: diferencia respecto del objetivo de esa semana.
+2. Déficit acumulado: saldo de horas pendientes arrastrado entre semanas.
+3. Horas necesarias para completar la semana actual.
+4. Horas previstas para las jornadas que todavía no se realizaron.
+
+El déficit acumulado no debe reiniciarse al cambiar de semana.
+
+Las horas adicionales pueden reducir el déficit anterior dentro de este modelo de seguimiento personal. No se debe generar automáticamente un crédito positivo ilimitado cuando el déficit ya es cero.
+
+Si se modifican registros históricos, deben recalcularse los balances de esa semana y los balances posteriores que dependan de ella.
+
+Una semana todavía abierta debe mostrar el déficit proyectado al cierre, claramente diferenciado del saldo definitivo de una semana cerrada.
+
+Importante: el sistema es una herramienta de seguimiento personal. No debe afirmar que las horas extra compensan formalmente faltantes de semanas anteriores si eso no está autorizado por la empresa.
+
+## 6. Modelo de datos
+
+Implementá modelos Django bien normalizados.
+
+### TravelRecord
+
+Campos mínimos:
+
+- `id`
+- `travel_date`
+- `amount`
+- `payment_type`
+- `status`
+- `created_at`
+- `updated_at`
+
+El importe debe utilizar un tipo decimal exacto o una representación entera en centavos. Nunca utilizar `float` para dinero.
+
+### WorkSession
+
+Campos mínimos:
+
+- `id`
+- `work_date`
+- `start_at`
+- `end_at`
+- `worked_minutes`
+- `notes`
+- `status`
+- `created_at`
+- `updated_at`
+
+Una jornada en curso debe poder existir sin `end_at`.
+
+La duración debe derivarse de las marcas de tiempo y validarse en el backend.
+
+### WorkPlan
+
+Campos mínimos:
+
+- `id`
+- `work_date`
+- `planned_start`
+- `planned_minutes`
+- `is_locked`
+- `is_available`
+- `notes`
+- `created_at`
+- `updated_at`
+
+El plan previsto debe mantenerse separado del registro real.
+
+### Settings
+
+Campos mínimos:
+
+- `weekly_target_minutes`
+- `daily_target_minutes`
+- `monthly_trip_limit`
+- `current_fare`
+- `preferred_workdays`
+- `timezone`
+
+Valores iniciales:
+
+- `weekly_target_minutes = 1200`
+- `daily_target_minutes = 300`
+- `monthly_trip_limit = 20`
+- `timezone = America/Argentina/Cordoba`
+
+Los días preferidos deben ser configurables desde la interfaz.
+
+### WeeklyBalance
+
+Podés implementarlo como un servicio de cálculo, una consulta optimizada o una tabla de snapshots si realmente es necesario.
+
+Debe proporcionar:
+
+- Semana de referencia.
+- Minutos trabajados.
+- Balance semanal.
+- Déficit inicial.
+- Déficit proyectado o definitivo al cierre.
+- Minutos restantes para el objetivo semanal.
+
+Evitá guardar el mismo dato derivado en varios lugares si eso puede producir inconsistencias.
+
+## 7. Backend y API REST
+
+Organizá Django en aplicaciones o módulos separados cuando tenga sentido, por ejemplo `transport`, `work` y `core`.
+
+Implementá, como mínimo, los siguientes endpoints:
+
+- `POST /api/travels/`
+- `GET /api/travels/`
+- `PATCH /api/travels/{id}/`
+- `GET /api/travels/summary/`
+- `POST /api/work-sessions/`
+- `PATCH /api/work-sessions/{id}/`
+- `GET /api/work-sessions/weekly-summary/`
+- `GET /api/work-sessions/monthly-summary/`
+- `GET /api/work-plans/weekly/`
+- `POST /api/work-plans/generate/`
+- `PATCH /api/work-plans/{id}/`
+- `GET /api/settings/`
+- `PATCH /api/settings/`
+
+Todos los endpoints deben verificar que el usuario autenticado sea propietario de los registros.
+
+Incluí:
+- Validaciones de entrada.
+- Respuestas HTTP adecuadas.
+- Mensajes de error comprensibles.
+- Paginación en historiales cuando sea necesario.
+- Filtros por mes y semana.
+- Transacciones cuando una operación modifique varios registros.
+- Protección contra registros duplicados accidentales.
+- Documentación de la API.
+
+No confíes en los cálculos enviados por el frontend: validá y recalculá todo lo importante en el backend.
+
+## 8. Persistencia y seguridad
+
+Los datos deben conservarse al cerrar el navegador, reiniciar el servidor o ingresar desde otro dispositivo.
+
+Requisitos:
+
+- PostgreSQL como base de datos principal.
+- Migraciones de Django.
+- Variables de entorno mediante un archivo `.env` local no versionado.
+- Archivo `.env.example` sin credenciales reales.
+- CORS configurado únicamente para los orígenes necesarios.
+- Autenticación obligatoria para acceder a los registros.
+- Protección CSRF si utilizás sesiones y cookies.
+- Validación de permisos en cada endpoint.
+- No exponer contraseñas, secretos ni información sensible en logs.
+- Instrucciones de respaldo y restauración de PostgreSQL.
+
+No uses `localStorage` como base de datos principal. Podés usarlo para preferencias de interfaz no sensibles, pero todos los registros reales deben persistir en PostgreSQL.
+
+## 9. Pruebas automatizadas
+
+Implementá pruebas de backend para las reglas de negocio.
+
+Como mínimo, verificá:
+
+**Transporte**
+- Registrar un viaje personal.
+- Registrar un viaje cubierto por la empresa.
+- Calcular correctamente el saldo mensual.
+- Excluir los registros anulados.
+- Renovar el saldo al cambiar de mes.
+- Mantener las tarifas históricas.
+
+**Horas**
+- Calcular correctamente una jornada de cinco horas.
+- Rechazar una salida anterior a la entrada.
+- Calcular el déficit semanal.
+- Arrastrar el déficit entre semanas.
+- Reducir el déficit cuando se trabajan horas adicionales.
+- Evitar que el déficit sea negativo.
+- Recalcular semanas posteriores tras corregir una jornada histórica.
+- Diferenciar el déficit proyectado del definitivo.
+
+**Planificador**
+- Generar cuatro jornadas de cinco horas cuando no existen restricciones.
+- No programar jornadas en días no disponibles.
+- Respetar los bloques bloqueados manualmente.
+- Evitar duplicaciones.
+- Detectar cuándo las horas pendientes no pueden distribuirse.
+
+**Seguridad**
+- Impedir que un usuario consulte o modifique registros de otro usuario.
+
+## 10. Entregables
+
+Quiero que desarrolles el proyecto con esta estructura aproximada:
+
+- `frontend/`
+- `backend/`
+- `docker-compose.yml`
+- `.env.example`
+- `README.md`
+
+El README debe incluir:
+
+- Requisitos previos.
+- Instalación paso a paso.
+- Configuración de variables de entorno.
+- Ejecución en desarrollo.
+- Ejecución con Docker Compose.
+- Migraciones de base de datos.
+- Ejecución de pruebas.
+- Creación de un usuario.
+- Instrucciones de despliegue.
+- Procedimiento de backup y restauración.
+
+## 11. Forma de trabajo
+
+Seguí este orden:
+
+1. Definí la arquitectura y la estructura de carpetas.
+2. Implementá los modelos y las migraciones.
+3. Implementá las reglas de negocio y las pruebas.
+4. Implementá la API.
+5. Construí el frontend y conectalo con la API real.
+6. Integrá el planificador.
+7. Verificá los flujos completos.
+8. Documentá cómo ejecutar y desplegar el proyecto.
+
+No te limites a enumerar archivos que debería crear: crealos y escribí el código correspondiente en el entorno de desarrollo disponible.
+
+No dejes funciones principales como `TODO`, no reemplaces el backend por datos ficticios y no afirmes que algo funciona si no lo probaste.
+
+Si tenés acceso a una terminal y podés ejecutar el proyecto, instalá las dependencias necesarias, aplicá las migraciones y ejecutá las pruebas. Corregí los errores que encuentres.
+
+Si una decisión secundaria no está especificada, elegí la alternativa más sencilla y segura, documentala y continuá sin bloquear el desarrollo con preguntas innecesarias.
+
+**Criterio final de aceptación:** debo poder iniciar sesión desde mi PC o celular, registrar viajes, controlar mis gastos, marcar entrada y salida del trabajo, consultar las horas trabajadas, ver mi déficit semanal y acumulado, y generar o modificar un plan semanal sin perder información ni depender de cálculos manuales.
+
+Comenzá implementando el proyecto real. Primero mostrame la estructura propuesta y después avanzá con los archivos, el código y las pruebas.

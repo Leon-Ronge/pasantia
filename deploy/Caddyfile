@@ -1,0 +1,11 @@
+# Reverse proxy con Basic Auth delante del stack (perfil "auth" de Compose).
+#
+# El hash de la contraseña se genera con Caddy (nunca va en claro):
+#   docker run --rm caddy:2-alpine caddy hash-password --plaintext 'tu-contraseña'
+# y se coloca en .env como CADDY_BASIC_AUTH_HASH.
+:80 {
+	basic_auth {
+		{$CADDY_BASIC_AUTH_USER} {$CADDY_BASIC_AUTH_HASH}
+	}
+	reverse_proxy frontend:80
+}

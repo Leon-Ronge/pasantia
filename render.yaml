@@ -1,0 +1,24 @@
+# Blueprint de Render: un solo servicio Docker (API + frontend).
+# DATABASE_URL (Neon), BASIC_AUTH_USER y BASIC_AUTH_PASS se cargan al
+# crear el Blueprint desde el dashboard de Render (valores secretos).
+services:
+  - type: web
+    name: pasantia
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health/
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "false"
+      - key: DATABASE_URL
+        sync: false # pegar la URL de conexión de Neon
+      - key: BASIC_AUTH_USER
+        sync: false # usuario de la contraseña de acceso
+      - key: BASIC_AUTH_PASS
+        sync: false # contraseña de acceso
+      - key: TZ
+        value: America/Argentina/Cordoba

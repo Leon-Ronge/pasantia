@@ -1,0 +1,82 @@
+# Stack completo: PostgreSQL + Django (API) + nginx (frontend).
+#
+# Uso:
+#   cp .env.example .env   # y editar valores
+#   docker compose up --build
+#   Abrir http://localhost:8080 (o http://<IP-del-PC>:8080 desde el celular)
+#
+# Desde Docker Desktop: pestaña Containers/Projects → "miapp" → botón ▶ Run.
+name: miapp
+services:
+  db:
+    # PostgreSQL 17: versión con la que se inicializó el volumen existente.
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-pasantia}
+      POSTGRES_USER: ${DB_USER:-pasantia}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Definí DB_PASSWORD en .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      # Expuesto para backups/restauración desde la máquina host.
+      - "${POSTGRES_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-pasantia} -d ${DB_NAME:-pasantia}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      DB_ENGINE: postgresql
+      DB_NAME: ${DB_NAME:-pasantia}
+      DB_USER: ${DB_USER:-pasantia}
+      DB_PASSWORD: ${DB_PASSWORD:?Definí DB_PASSWORD en .env}
+      DB_HOST: db
+      DB_PORT: "5432"
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Definí DJANGO_SECRET_KEY en .env}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-false}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,backend}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:8080}
+      # Fuente de `manage.py import_holidays <año>` ({year} es el año pedido).
+      HOLIDAYS_API_URL: ${HOLIDAYS_API_URL:-https://api.argentinadatos.com/v1/feriados/{year}}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - staticfiles:/app/staticfiles
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      - backend
+    volumes:
+      - staticfiles:/var/www/static:ro
+
+  caddy:
+    # Opcional (ver README «Proteger el acceso»): reverse proxy con Basic Auth
+    # delante del frontend. Se activa con: docker compose --profile auth up -d
+    image: caddy:2-alpine
+    profiles: ["auth"]
+    restart: unless-stopped
+    environment:
+      CADDY_BASIC_AUTH_USER: ${CADDY_BASIC_AUTH_USER:-admin}
+      # Obligatorio para usar el perfil: si está vacío, Caddy falla al arrancar
+      # (generá el hash con: caddy hash-password --plaintext 'tu-contraseña').
+      CADDY_BASIC_AUTH_HASH: ${CADDY_BASIC_AUTH_HASH:-}
+    ports:
+      - "${AUTH_PORT:-8443}:80"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - frontend
+
+volumes:
+  pgdata:
+  staticfiles:
