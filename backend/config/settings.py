@@ -13,6 +13,7 @@ Decisiones documentadas (ver README):
 import os
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -112,7 +113,19 @@ def _database_from_url(url: str) -> dict:
 
 if os.getenv("DATABASE_URL"):
     # Producción (Render + Neon): todo desde la URL de conexión.
-    DATABASES = {"default": _database_from_url(os.getenv("DATABASE_URL", ""))}
+    _database_url = os.getenv("DATABASE_URL", "")
+    # Falla temprano y con mensaje accionable si llega la URL equivocada
+    # (p. ej. el link del panel de Neon en vez del connection string).
+    if not _database_url.startswith(("postgres://", "postgresql://")):
+        raise ImproperlyConfigured(
+            "DATABASE_URL inválida: se espera una cadena de conexión de "
+            "Postgres (empieza con postgresql://…), por ejemplo la "
+            "'pooled connection string' de Neon: "
+            "postgresql://usuario:clave@ep-xxxx.neon.tech/neondb?sslmode=require. "
+            "NO uses el link del panel (console.neon.tech). "
+            f"Recibida: {_database_url[:60]}"
+        )
+    DATABASES = {"default": _database_from_url(_database_url)}
 elif DB_ENGINE in ("sqlite", "sqlite3"):
     DATABASES = {
         "default": {
